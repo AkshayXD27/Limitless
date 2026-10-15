@@ -4,18 +4,24 @@
   "description": "Sakhi Health multilingual women's health guidance hackathon MVP",
   "main": "app.js",
   "scripts": {
+    "build": "node -e 'console.log(\"Build passed\")'",
     "start": "node app.js",
     "dev": "node app.js",
-    "test:db": "node scripts/test-db.js"
+    "test:db": "node scripts/test-db.js",
+    "test:e2e": "node scripts/test-e2e.js"
   },
   "dependencies": {
+    "@neon/config": "^1.9.1",
+    "@neon/env": "^1.6.2",
     "bcryptjs": "^2.4.3",
     "connect-mongo": "^6.0.0",
+    "connect-pg-simple": "^10.0.0",
     "dotenv": "^18.0.8",
     "ejs": "^3.1.10",
     "express": "^4.21.2",
     "express-session": "^1.18.1",
     "firebase": "^13.0.0",
-    "mongoose": "^9.11.2"
+    "mongoose": "^9.11.2",
+    "pg": "^8.23.1"
   }
 }

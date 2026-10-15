@@ -1,16 +1,22 @@
+const fs = require("fs");
+const path = require("path");
+
+// Load .env.local first (populated by neon deploy/env pull), then fallback to .env
+if (fs.existsSync(path.join(__dirname, ".env.local"))) {
+  require("dotenv").config({ path: path.join(__dirname, ".env.local") });
+}
 require("dotenv").config();
+
 const express = require("express");
 const session = require("express-session");
-const MongoStore = require("connect-mongo");
-const path = require("path");
-const mongoose = require("mongoose");
+const pgSession = require("connect-pg-simple")(session);
 
 const authRoutes = require("./routes/authRoutes");
 const profileRoutes = require("./routes/profileRoutes");
 const symptomRoutes = require("./routes/symptomRoutes");
 const communityRoutes = require("./routes/communityRoutes");
 const { attachCurrentUser } = require("./middleware/auth");
-const { connectDatabase, isDbConnected, buildMongoUri, ensureDb } = require("./data/userStore");
+const { connectDatabase, isDbConnected, getDbPool, ensureDb } = require("./data/userStore");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -19,7 +25,7 @@ const PORT = process.env.PORT || 3000;
 app.set("trust proxy", 1);
 
 // Initialize database connection
-connectDatabase().catch(err => console.error("Database initialization error:", err));
+connectDatabase().catch(err => console.error("Neon Postgres initialization error:", err));
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
@@ -28,11 +34,11 @@ app.use(express.urlencoded({ extended: true, limit: "50kb" }));
 app.use(express.json({ limit: "50kb" }));
 app.use(express.static(path.join(__dirname, "public")));
 
-const mongoUri = buildMongoUri();
-const sessionStore = mongoUri ? MongoStore.create({
-  mongoUrl: mongoUri,
-  ttl: 14 * 24 * 60 * 60,
-  autoRemove: "native"
+const pool = getDbPool();
+const sessionStore = pool ? new pgSession({
+  pool,
+  tableName: "session",
+  createTableIfMissing: true
 }) : undefined;
 
 app.use(session({
@@ -68,9 +74,12 @@ app.get("/api/health", async (req, res) => {
     status: "ok",
     database: {
       connected: isDbConnected(),
-      readyState: mongoose.connection.readyState,
-      dbPasswordConfigured: Boolean(process.env.DB_PASSWORD || process.env.MONGODB_PASSWORD),
-      mongodbUriConfigured: Boolean(process.env.MONGODB_URI)
+      provider: "Neon Postgres",
+      branch: process.env.NEON_BRANCH || "production",
+      databaseUrlConfigured: Boolean(process.env.DATABASE_URL || process.env.DATABASE_URL_UNPOOLED)
+    },
+    aiGateway: {
+      configured: Boolean(process.env.NEON_AI_GATEWAY_TOKEN && process.env.NEON_AI_GATEWAY_BASE_URL)
     },
     firebase: {
       projectId: "women-shealth",
