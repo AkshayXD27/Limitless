@@ -49,6 +49,15 @@ app.use("/api/profile", profileRoutes);
 app.use("/api/symptoms", symptomRoutes);
 app.use("/api/community", communityRoutes);
 
+app.get("/api/health", (req, res) => {
+  const connected = isDbConnected();
+  res.json({
+    status: "ok",
+    database: connected ? "connected" : "disconnected (using in-memory fallback)",
+    mongodb: connected
+  });
+});
+
 app.get("/onboarding", (req, res) => {
   if (!req.currentUser) return res.redirect("/");
   if (req.currentUser.profile) return res.redirect("/dashboard");
