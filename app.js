@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const session = require("express-session");
 const path = require("path");
@@ -7,10 +8,13 @@ const profileRoutes = require("./routes/profileRoutes");
 const symptomRoutes = require("./routes/symptomRoutes");
 const communityRoutes = require("./routes/communityRoutes");
 const { attachCurrentUser } = require("./middleware/auth");
-const { users } = require("./data/userStore");
+const { connectDatabase, isDbConnected } = require("./data/userStore");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Initialize database connection
+connectDatabase().catch(err => console.error("Database initialization error:", err));
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
@@ -68,6 +72,10 @@ app.use((req, res) => {
   res.status(404).send("Page not found. <a href='/'>Return to Sakhi Health</a>");
 });
 
-app.listen(PORT, () => {
-  console.log(`Sakhi Health is running at http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== "test") {
+  app.listen(PORT, () => {
+    console.log(`Sakhi Health is running at http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;

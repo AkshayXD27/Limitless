@@ -1,14 +1,24 @@
-const { users } = require("../data/userStore");
+const { findUserByEmail } = require("../data/userStore");
 
-function attachCurrentUser(req, res, next) {
-  const email = req.session && req.session.userEmail;
-  req.currentUser = email ? users.get(email) || null : null;
+async function attachCurrentUser(req, res, next) {
+  try {
+    const email = req.session && req.session.userEmail;
+    if (!email) {
+      req.currentUser = null;
+      return next();
+    }
 
-  // Avoid serving stale logged-in pages if the in-memory demo store was reset.
-  if (email && !req.currentUser) {
-    req.session.userEmail = null;
+    req.currentUser = await findUserByEmail(email);
+
+    if (!req.currentUser) {
+      req.session.userEmail = null;
+    }
+    next();
+  } catch (err) {
+    console.error("Error in attachCurrentUser:", err);
+    req.currentUser = null;
+    next();
   }
-  next();
 }
 
 function requireLogin(req, res, next) {

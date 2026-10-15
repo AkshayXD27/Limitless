@@ -10,6 +10,18 @@
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Firebase Modules -->
+  <script type="importmap">
+  {
+    "imports": {
+      "firebase/app": "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js",
+      "firebase/analytics": "https://www.gstatic.com/firebasejs/10.14.1/firebase-analytics.js",
+      "firebase/auth": "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js"
+    }
+  }
+  </script>
+  <script type="module" src="/js/firebase-init.js"></script>
 </head>
 <body class="auth-page">
   <div id="root"></div>
