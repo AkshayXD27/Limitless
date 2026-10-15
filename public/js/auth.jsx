@@ -26,9 +26,12 @@ function AuthApp() {
       return "Sign-in popup was closed before completing.";
     }
     if (code === "auth/unauthorized-domain") {
-      return "This domain is not authorized in Firebase Console (Settings > Authorized domains).";
+      return "This domain is not yet authorized in Firebase Console (Authentication > Settings > Authorized domains). Add your Vercel URL to continue.";
     }
-    return err?.message || "Authentication failed. Please try again.";
+    if (code === "auth/operation-not-allowed") {
+      return "Email/Password sign-in is disabled in Firebase Console (Authentication > Sign-in method). Please enable it.";
+    }
+    return err?.message || "Authentication failed. Please check your credentials and try again.";
   }
 
   async function syncSessionWithServer(userObj, authProvider = "firebase") {
@@ -60,7 +63,7 @@ function AuthApp() {
 
     try {
       // 1. If Firebase Auth is loaded on window, authenticate with Firebase
-      if (window.SakhiFirebase) {
+      if (window.SakhiFirebase && window.SakhiFirebase.isLoaded) {
         let firebaseUser;
         if (mode === "register") {
           firebaseUser = await window.SakhiFirebase.registerWithEmail(form.name, form.email, form.password);
@@ -81,9 +84,10 @@ function AuthApp() {
         body: JSON.stringify({ name: form.name, email: form.email, password: form.password })
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Something went wrong. Please try again.");
+      if (!response.ok) throw new Error(data.error || "Authentication failed.");
       window.location.href = data.next;
     } catch (err) {
+      console.error("Auth submit error:", err);
       setError(formatFirebaseError(err));
     } finally {
       setBusy(false);
@@ -102,6 +106,7 @@ function AuthApp() {
       const sessionData = await syncSessionWithServer(firebaseUser, "google");
       window.location.href = sessionData.next;
     } catch (err) {
+      console.error("Google sign-in error:", err);
       setError(formatFirebaseError(err));
     } finally {
       setBusy(false);

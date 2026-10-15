@@ -1,18 +1,4 @@
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-import {
-  getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signInWithPopup,
-  GoogleAuthProvider,
-  updateProfile,
-  signOut
-} from "firebase/auth";
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+// Sakhi Health - Firebase Client Initialization
 const firebaseConfig = {
   apiKey: "AIzaSyD-lP1JlqnNeOw23O8LU4KVCDgj3Q7-eAo",
   authDomain: "women-shealth.firebaseapp.com",
@@ -23,43 +9,46 @@ const firebaseConfig = {
   measurementId: "G-TZYEJH848B"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-let analytics = null;
 try {
-  analytics = getAnalytics(app);
-} catch (e) {
-  // Ignore analytics initialization failure in ad-blocked or non-supported contexts
-}
-
-const auth = getAuth(app);
-const googleProvider = new GoogleAuthProvider();
-
-// Expose clean helper methods for React frontend
-window.SakhiFirebase = {
-  app,
-  auth,
-  analytics,
-  registerWithEmail: async (name, email, password) => {
-    const cred = await createUserWithEmailAndPassword(auth, email, password);
-    if (name && cred.user) {
-      try {
-        await updateProfile(cred.user, { displayName: name });
-      } catch (err) {
-        console.warn("Could not set displayName on Firebase:", err.message);
-      }
+  if (typeof firebase !== "undefined") {
+    if (!firebase.apps || !firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
     }
-    return cred.user;
-  },
-  loginWithEmail: async (email, password) => {
-    const cred = await signInWithEmailAndPassword(auth, email, password);
-    return cred.user;
-  },
-  loginWithGoogle: async () => {
-    const cred = await signInWithPopup(auth, googleProvider);
-    return cred.user;
-  },
-  signOutUser: async () => {
-    await signOut(auth);
+
+    const auth = firebase.auth();
+    const googleProvider = new firebase.auth.GoogleAuthProvider();
+
+    window.SakhiFirebase = {
+      isLoaded: true,
+      auth: auth,
+      registerWithEmail: async (name, email, password) => {
+        const cred = await auth.createUserWithEmailAndPassword(email, password);
+        if (name && cred.user) {
+          try {
+            await cred.user.updateProfile({ displayName: name });
+          } catch (e) {
+            console.warn("Could not set displayName on Firebase:", e.message);
+          }
+        }
+        return cred.user;
+      },
+      loginWithEmail: async (email, password) => {
+        const cred = await auth.signInWithEmailAndPassword(email, password);
+        return cred.user;
+      },
+      loginWithGoogle: async () => {
+        const cred = await auth.signInWithPopup(googleProvider);
+        return cred.user;
+      },
+      signOutUser: async () => {
+        await auth.signOut();
+      }
+    };
+    console.log("[Firebase] Auth initialized successfully.");
+    window.dispatchEvent(new Event("sakhi-firebase-ready"));
+  } else {
+    console.warn("[Firebase] Global firebase object not found on window.");
   }
-};
+} catch (err) {
+  console.error("[Firebase] Initialization error:", err);
+}

@@ -4,7 +4,11 @@ const User = require("../models/User");
 // In-memory fallback map for offline development when DB_PASSWORD is not set
 const memoryUsers = new Map();
 
-let dbConnected = false;
+// Connection caching across serverless invocations
+let cached = global.mongooseCached;
+if (!cached) {
+  cached = global.mongooseCached = { conn: null, promise: null };
+}
 
 function buildMongoUri() {
   if (process.env.MONGODB_URI) {
@@ -24,30 +28,50 @@ async function connectDatabase() {
     return false;
   }
 
-  try {
-    await mongoose.connect(uri, {
+  if (cached.conn && mongoose.connection.readyState === 1) {
+    return true;
+  }
+
+  if (!cached.promise) {
+    cached.promise = mongoose.connect(uri, {
       serverSelectionTimeoutMS: 8000
+    }).then(instance => {
+      console.log("[MongoDB] Connected successfully to cluster0.wt9cw4f.mongodb.net/women_shealth");
+      return instance;
+    }).catch(err => {
+      cached.promise = null;
+      console.error("[MongoDB] Connection error:", err.message);
+      throw err;
     });
-    dbConnected = true;
-    console.log("[MongoDB] Connected successfully to cluster0.wt9cw4f.mongodb.net/women_shealth");
+  }
+
+  try {
+    cached.conn = await cached.promise;
     return true;
   } catch (err) {
-    console.error("[MongoDB] Connection error:", err.message);
-    console.warn("[MongoDB] Continuing with temporary in-memory store.");
-    dbConnected = false;
     return false;
   }
 }
 
+async function ensureDb() {
+  if (mongoose.connection.readyState === 1) {
+    return true;
+  }
+  const uri = buildMongoUri();
+  if (!uri) return false;
+  return await connectDatabase();
+}
+
 function isDbConnected() {
-  return dbConnected && mongoose.connection.readyState === 1;
+  return mongoose.connection.readyState === 1;
 }
 
 async function findUserByEmail(email) {
   const normalized = String(email || "").trim().toLowerCase();
   if (!normalized) return null;
 
-  if (isDbConnected()) {
+  const connected = await ensureDb();
+  if (connected) {
     return await User.findOne({ email: normalized });
   }
   return memoryUsers.get(normalized) || null;
@@ -57,7 +81,8 @@ async function createUser({ name, email, passwordHash = null, firebaseUid = null
   const normalized = String(email || "").trim().toLowerCase();
   const trimmedName = String(name || "").trim();
 
-  if (isDbConnected()) {
+  const connected = await ensureDb();
+  if (connected) {
     return await User.create({
       name: trimmedName,
       email: normalized,
@@ -84,7 +109,8 @@ async function updateUserProfile(email, profileData) {
   const normalized = String(email || "").trim().toLowerCase();
   if (!normalized) return null;
 
-  if (isDbConnected()) {
+  const connected = await ensureDb();
+  if (connected) {
     return await User.findOneAndUpdate(
       { email: normalized },
       { $set: { profile: profileData } },
@@ -104,7 +130,8 @@ async function syncFirebaseUser({ email, name, firebaseUid, authProvider = "fire
   const normalized = String(email || "").trim().toLowerCase();
   if (!normalized) throw new Error("Email is required for Firebase user synchronization.");
 
-  if (isDbConnected()) {
+  const connected = await ensureDb();
+  if (connected) {
     let user = await User.findOne({ email: normalized });
     if (user) {
       user.firebaseUid = firebaseUid || user.firebaseUid;
@@ -144,7 +171,9 @@ async function syncFirebaseUser({ email, name, firebaseUid, authProvider = "fire
 
 module.exports = {
   users: memoryUsers,
+  buildMongoUri,
   connectDatabase,
+  ensureDb,
   isDbConnected,
   findUserByEmail,
   createUser,

@@ -1,17 +1,22 @@
 require("dotenv").config();
 const express = require("express");
 const session = require("express-session");
+const MongoStore = require("connect-mongo");
 const path = require("path");
+const mongoose = require("mongoose");
 
 const authRoutes = require("./routes/authRoutes");
 const profileRoutes = require("./routes/profileRoutes");
 const symptomRoutes = require("./routes/symptomRoutes");
 const communityRoutes = require("./routes/communityRoutes");
 const { attachCurrentUser } = require("./middleware/auth");
-const { connectDatabase, isDbConnected } = require("./data/userStore");
+const { connectDatabase, isDbConnected, buildMongoUri, ensureDb } = require("./data/userStore");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Trust Vercel / reverse proxy for secure cookies
+app.set("trust proxy", 1);
 
 // Initialize database connection
 connectDatabase().catch(err => console.error("Database initialization error:", err));
@@ -23,7 +28,15 @@ app.use(express.urlencoded({ extended: true, limit: "50kb" }));
 app.use(express.json({ limit: "50kb" }));
 app.use(express.static(path.join(__dirname, "public")));
 
+const mongoUri = buildMongoUri();
+const sessionStore = mongoUri ? MongoStore.create({
+  mongoUrl: mongoUri,
+  ttl: 14 * 24 * 60 * 60,
+  autoRemove: "native"
+}) : undefined;
+
 app.use(session({
+  store: sessionStore,
   secret: process.env.SESSION_SECRET || "development-only-change-this-secret",
   resave: false,
   saveUninitialized: false,
@@ -31,7 +44,7 @@ app.use(session({
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
-    maxAge: 1000 * 60 * 60 * 4
+    maxAge: 1000 * 60 * 60 * 24 * 7
   }
 }));
 
@@ -49,12 +62,20 @@ app.use("/api/profile", profileRoutes);
 app.use("/api/symptoms", symptomRoutes);
 app.use("/api/community", communityRoutes);
 
-app.get("/api/health", (req, res) => {
-  const connected = isDbConnected();
+app.get("/api/health", async (req, res) => {
+  const connected = await ensureDb();
   res.json({
     status: "ok",
-    database: connected ? "connected" : "disconnected (using in-memory fallback)",
-    mongodb: connected
+    database: {
+      connected: isDbConnected(),
+      readyState: mongoose.connection.readyState,
+      dbPasswordConfigured: Boolean(process.env.DB_PASSWORD || process.env.MONGODB_PASSWORD),
+      mongodbUriConfigured: Boolean(process.env.MONGODB_URI)
+    },
+    firebase: {
+      projectId: "women-shealth",
+      authDomain: "women-shealth.firebaseapp.com"
+    }
   });
 });
 
