@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sakhi Health — Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="/css/styles.css" rel="stylesheet">
+</head>
+<body class="dashboard-page">
+  <div class="dashboard-shell">
+    <aside class="dashboard-sidebar">
+      <a class="brand" href="/dashboard"><span class="brand-mark">✿</span><span><b>Sakhi Health</b><small>Understand · Learn · Care</small></span></a>
+      <div class="sidebar-links">
+        <a class="selected" href="/dashboard">⌂ <span>Home</span></a>
+        <a href="#profile-summary">♙ <span>My Profile</span></a>
+        <a href="#symptom-checker">✧ <span>Symptom Checker</span></a>
+        <a href="#resources">▤ <span>Health Library</span></a>
+        <a href="#profile-summary">▧ <span>My Health Notes</span></a>
+        <a href="#care">♡ <span>Care Guidance</span></a>
+      </div>
+      <div class="sidebar-bottom"><span class="sidebar-heart">♡</span><p>Your health journey is personal. Share only what you feel comfortable sharing.</p><form action="/logout" method="post"><button class="logout-btn">↪ Log out</button></form></div>
+    </aside>
+    <main class="dashboard-main">
+      <header class="dashboard-topbar">
+        <div class="search-pill"><span>⌕</span><input id="resourceSearch" placeholder="Search symptoms, topics, or guidance..." aria-label="Search health resources"></div>
+        <div class="profile-menu" id="profile"><div class="avatar"><%= user.name.charAt(0).toUpperCase() %></div><div><b><%= user.name %></b><small>My profile</small></div><button class="profile-toggle" aria-label="Show profile details" onclick="document.getElementById('profilePopover').classList.toggle('show')">⌄</button><div class="profile-popover" id="profilePopover"><b><%= user.name %></b><small><%= user.email %></small><hr><span>Preferred language: <%= profile.language %></span><span>Age: <%= profile.age %></span></div></div>
+      </header>
+      <div class="dashboard-content">
+        <section class="welcome-card glass-card">
+          <div class="welcome-decoration">✿</div><span class="eyebrow">A LITTLE SPACE FOR YOU</span>
+          <h1>Welcome, <%= user.name %>! <span>♡</span></h1>
+          <p>Your health journey matters. Understand your symptoms, learn about your body,<br class="desktop-break"> and find guidance toward the right care.</p>
+          <div class="welcome-chips"><span>✧ Learn at your pace</span><span>♡ No judgement, just guidance</span></div>
+        </section>
+        <section class="feature-grid">
+          <a class="feature-card" href="#symptom-checker"><span class="feature-icon pink-icon">⌕</span><b>Understand Symptoms</b><small>Describe what you're feeling</small><span class="feature-arrow">↗</span></a>
+          <a class="feature-card" href="#profile-summary"><span class="feature-icon peach-icon">▦</span><b>Your Health Profile</b><small>Review your health notes</small><span class="feature-arrow">↗</span></a>
+          <a class="feature-card" href="#pcos"><span class="feature-icon rose-icon">✿</span><b>Learn About PCOS</b><small>Clear, reliable information</small><span class="feature-arrow">↗</span></a>
+          <a class="feature-card" href="#care"><span class="feature-icon lilac-icon">♡</span><b>Care Guidance</b><small>Explore appropriate next steps</small><span class="feature-arrow">↗</span></a>
+        </section>
+        <section class="content-grid">
+          <div class="panel glass-card symptom-panel" id="symptom-checker">
+            <div class="panel-heading"><div><span class="eyebrow">LET'S TALK ABOUT IT</span><h2>What have you been experiencing?</h2><p>Use everyday words. You can write in your preferred language.</p></div><span class="panel-flower">✿</span></div>
+            <form id="symptomForm"><label class="field-label" for="symptomDescription">Describe your symptoms</label><textarea id="symptomDescription" class="form-control" rows="4" placeholder="For example: My periods have been irregular for a few months, and I've noticed more acne..."></textarea><div class="input-foot"><span>♡ Your words are enough. Medical terms aren't required.</span><button class="btn btn-sakhi" id="guidanceButton">Explore guidance →</button></div></form>
+            <div id="guidanceResult" class="guidance-result" aria-live="polite"></div>
+            <div class="medical-disclaimer">This tool provides general educational information, not a diagnosis or a substitute for professional medical care.</div>
+          </div>
+          <div class="panel glass-card" id="profile-summary">
+            <div class="panel-heading"><div><span class="eyebrow">YOUR DETAILS</span><h2>Health profile</h2></div><span class="profile-symbol">♡</span></div>
+            <div class="metric-row"><span>Age</span><b><%= profile.age %> years</b></div>
+            <div class="metric-row"><span>Height</span><b><%= profile.height %> cm</b></div>
+            <div class="metric-row"><span>Weight</span><b><%= profile.weight %> kg</b></div>
+            <div class="metric-row"><span>Language</span><b><%= profile.language %></b></div>
+            <p class="profile-reminder">Keep your notes updated when something changes. They may help you prepare for a healthcare visit.</p>
+          </div>
+        </section>
+        <section class="resources-section" id="resources">
+          <div class="section-title"><div><span class="eyebrow">GENTLE, TRUSTED LEARNING</span><h2>Explore health topics</h2></div><span class="resources-heart">♡</span></div>
+          <div class="resource-grid">
+            <article class="resource-card" data-search="pcos polycystic ovary syndrome hormones periods"><span>✿</span><div><b id="pcos">PCOS, explained</b><p>Learn about symptoms, evaluation, and questions to ask a clinician.</p></div><small>LEARN MORE ↗</small></article>
+            <article class="resource-card" data-search="period menstrual cycle irregular periods"><span>◷</span><div><b>Menstrual health</b><p>Understand cycle changes and how to track them.</p></div><small>LEARN MORE ↗</small></article>
+            <article class="resource-card" data-search="doctor care appointment questions"><span>♡</span><div><b>Preparing for care</b><p>Make a simple list of symptoms and questions for your visit.</p></div><small>LEARN MORE ↗</small></article>
+          </div>
+        </section>
+        <section id="care" class="care-note"><b>When to seek care</b><p>If symptoms are sudden, severe, or rapidly worsening, seek urgent medical attention. Do not use this prototype to rule out a serious condition.</p></section>
+        <footer class="dashboard-footer">Made with care for every woman's health journey <span>♡</span> <small> · Educational guidance only, not a diagnosis.</small></footer>
+      </div>
+    </main>
+  </div>
+  <script src="/js/dashboard.js"></script>
+</body>
+</html>

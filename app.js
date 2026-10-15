@@ -1,41 +1,71 @@
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
+const express = require("express");
+const session = require("express-session");
+const path = require("path");
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
+const authRoutes = require("./routes/authRoutes");
+const profileRoutes = require("./routes/profileRoutes");
+const symptomRoutes = require("./routes/symptomRoutes");
+const { attachCurrentUser } = require("./middleware/auth");
+const { users } = require("./data/userStore");
 
-var app = express();
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-// view engine setup
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'jade');
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
 
-app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.urlencoded({ extended: true, limit: "50kb" }));
+app.use(express.json({ limit: "50kb" }));
+app.use(express.static(path.join(__dirname, "public")));
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
+app.use(session({
+  secret: process.env.SESSION_SECRET || "development-only-change-this-secret",
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 1000 * 60 * 60 * 4
+  }
+}));
 
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  next(createError(404));
+app.use(attachCurrentUser);
+
+app.get("/", (req, res) => {
+  if (req.currentUser) {
+    return res.redirect(req.currentUser.profile ? "/dashboard" : "/onboarding");
+  }
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+app.use("/api/auth", authRoutes);
+app.use("/api/profile", profileRoutes);
+app.use("/api/symptoms", symptomRoutes);
 
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
+app.get("/onboarding", (req, res) => {
+  if (!req.currentUser) return res.redirect("/");
+  if (req.currentUser.profile) return res.redirect("/dashboard");
+  res.sendFile(path.join(__dirname, "public", "onboarding.html"));
 });
 
-module.exports = app;
+app.get("/dashboard", (req, res) => {
+  if (!req.currentUser) return res.redirect("/");
+  if (!req.currentUser.profile) return res.redirect("/onboarding");
+  res.render("dashboard", {
+    user: req.currentUser,
+    profile: req.currentUser.profile
+  });
+});
+
+app.post("/logout", (req, res) => {
+  req.session.destroy(() => res.redirect("/"));
+});
+
+app.use((req, res) => {
+  res.status(404).send("Page not found. <a href='/'>Return to Sakhi Health</a>");
+});
+
+app.listen(PORT, () => {
+  console.log(`Sakhi Health is running at http://localhost:${PORT}`);
+});
