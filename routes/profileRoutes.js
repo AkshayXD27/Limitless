@@ -36,4 +36,19 @@ router.post("/", requireLogin, (req, res) => {
   res.json({ next: "/dashboard" });
 });
 
+
+// Update the extended private profile from the dashboard without requiring onboarding again.
+router.patch("/", requireLogin, (req, res) => {
+  const body = req.body || {};
+  const profile = req.currentUser.profile || {};
+  const languageOptions = ["English", "Telugu", "Hindi", "Kannada", "Tamil"];
+  profile.region = String(body.region ?? profile.region ?? "").trim().slice(0, 120);
+  profile.medicalHistory = String(body.medicalHistory ?? profile.medicalHistory ?? "").slice(0, 3000);
+  profile.prescriptions = String(body.prescriptions ?? profile.prescriptions ?? "").slice(0, 3000);
+  profile.medications = String(body.medications ?? profile.medications ?? "").slice(0, 2000);
+  if (languageOptions.includes(body.language)) profile.language = body.language;
+  req.currentUser.profile = profile;
+  res.json({ ok: true, profile: { region: profile.region, language: profile.language } });
+});
+
 module.exports = router;
