@@ -5,6 +5,7 @@ const path = require("path");
 const authRoutes = require("./routes/authRoutes");
 const profileRoutes = require("./routes/profileRoutes");
 const symptomRoutes = require("./routes/symptomRoutes");
+const communityRoutes = require("./routes/communityRoutes");
 const { attachCurrentUser } = require("./middleware/auth");
 const { users } = require("./data/userStore");
 
@@ -42,6 +43,7 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/symptoms", symptomRoutes);
+app.use("/api/community", communityRoutes);
 
 app.get("/onboarding", (req, res) => {
   if (!req.currentUser) return res.redirect("/");

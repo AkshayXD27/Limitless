@@ -12,7 +12,13 @@
       <a class="brand" href="/dashboard"><span class="brand-mark">✿</span><span><b>Sakhi Health</b><small>Understand · Learn · Care</small></span></a>
       <div class="sidebar-links">
         <a class="selected" href="/dashboard">⌂ <span>Home</span></a>
-        <a href="#profile-summary">♙ <span>My Profile</span></a>
+        <a href="#profile-summary">♙ <span data-i18n="myProfile">My Profile</span></a>
+        <a href="#region-profile">◎ <span data-i18n="region">Geography / Region</span></a>
+        <a href="#medical-history">♡ <span data-i18n="medicalHistory">Medical History</span></a>
+        <a href="#prescriptions">▤ <span data-i18n="prescriptions">Past & Prescriptions</span></a>
+        <a href="#current-medications">＋ <span data-i18n="currentMeds">Current Medications</span></a>
+        <a href="#language-settings">文 <span data-i18n="language">Language</span></a>
+        <a href="#community">☷ <span data-i18n="community">Community</span></a>
         <a href="#symptom-checker">✧ <span>Symptom Checker</span></a>
         <a href="#resources">▤ <span>Health Library</span></a>
         <a href="#profile-summary">▧ <span>My Health Notes</span></a>
@@ -54,6 +60,24 @@
             <p class="profile-reminder">Keep your notes updated when something changes. They may help you prepare for a healthcare visit.</p>
           </div>
         </section>
+        <section class="panel glass-card profile-editor-section" id="region-profile">
+          <div class="panel-heading"><div><span class="eyebrow" data-i18n="privateSettings">YOUR PRIVATE DETAILS</span><h2 data-i18n="profileSettings">Profile & preferences</h2><p data-i18n="privateNote">These details are private to your account and are not posted to the community.</p></div><span class="profile-symbol">♡</span></div>
+          <form id="extendedProfileForm" class="profile-form-grid">
+            <div><label class="field-label" for="regionInput" data-i18n="regionLabel">Geography / region</label><input class="form-control" id="regionInput" name="region" maxlength="120" value="<%= profile.region || '' %>" placeholder="e.g. Karnataka, India"></div>
+            <div id="language-settings"><label class="field-label" for="languageSelect" data-i18n="preferredLanguage">Preferred language</label><select class="form-select" id="languageSelect" name="language"><option <%= profile.language === 'English' ? 'selected' : '' %>>English</option><option <%= profile.language === 'Telugu' ? 'selected' : '' %>>Telugu</option><option <%= profile.language === 'Hindi' ? 'selected' : '' %>>Hindi</option><option <%= profile.language === 'Kannada' ? 'selected' : '' %>>Kannada</option><option <%= profile.language === 'Tamil' ? 'selected' : '' %>>Tamil</option></select></div>
+            <div class="wide-field" id="medical-history"><label class="field-label" for="medicalHistoryInput" data-i18n="medicalHistoryLabel">Medical history (optional)</label><textarea class="form-control" id="medicalHistoryInput" name="medicalHistory" rows="3" maxlength="3000" placeholder="Conditions, allergies, surgeries, or relevant history"><%= profile.medicalHistory || '' %></textarea></div>
+            <div class="wide-field" id="prescriptions"><label class="field-label" for="prescriptionsInput" data-i18n="pastPrescriptions">Past treatments & prescriptions</label><textarea class="form-control" id="prescriptionsInput" name="prescriptions" rows="3" maxlength="3000" placeholder="Past treatments or prescriptions (include dates if useful)"><%= profile.prescriptions || '' %></textarea></div>
+            <div class="wide-field" id="current-medications"><label class="field-label" for="medicationsInput" data-i18n="currentMedsLabel">Current medications (if any)</label><textarea class="form-control" id="medicationsInput" name="medications" rows="2" maxlength="2000" placeholder="Medicine name, dose, and how often (if known)"><%= profile.medications || '' %></textarea></div>
+            <div class="wide-field profile-save-row"><small data-i18n="healthPrivacy">Health information is sensitive. Only enter what you want saved in this demo.</small><button class="btn btn-sakhi" type="submit" data-i18n="saveProfile">Save private profile</button><span id="profileSaveStatus" role="status"></span></div>
+          </form>
+        </section>
+        <section class="panel glass-card community-panel" id="community">
+          <div class="panel-heading"><div><span class="eyebrow" data-i18n="safeSpace">A SUPPORTIVE SPACE</span><h2 data-i18n="communityTitle">Sakhi Community</h2><p data-i18n="communityIntro">Share experiences, ask general questions, and support one another respectfully.</p></div><span class="profile-symbol">♡</span></div>
+          <div class="community-safety-note"><b data-i18n="communitySafetyTitle">A few safety reminders</b><span data-i18n="communitySafety">Use a nickname if you prefer. Do not post contact details, identifying information, or private medical records. Community posts are not medical advice.</span></div>
+          <form id="communityPostForm" class="community-compose"><label class="field-label" for="communityPostText" data-i18n="shareExperience">Share your experience</label><textarea class="form-control" id="communityPostText" rows="3" maxlength="1200" required placeholder="You are not alone. What would you like to share?"></textarea><div class="community-compose-foot"><small><span id="postCharCount">0</span>/1200</small><button class="btn btn-sakhi" type="submit" data-i18n="publishPost">Post to community →</button></div><div id="communityStatus" role="status" class="community-status"></div></form>
+          <div class="community-feed-heading"><h3 data-i18n="recentPosts">Community conversations</h3><span data-i18n="reportNote">Report posts or users that seem abusive.</span></div>
+          <div id="communityFeed" class="community-feed" aria-live="polite"><p class="muted-note">Loading community posts…</p></div>
+        </section>
         <section class="resources-section" id="resources">
           <div class="section-title"><div><span class="eyebrow">GENTLE, TRUSTED LEARNING</span><h2>Explore health topics</h2></div><span class="resources-heart">♡</span></div>
           <div class="resource-grid">
@@ -67,6 +91,7 @@
       </div>
     </main>
   </div>
+  <script>window.SAKHI_PROFILE_LANGUAGE = <%- JSON.stringify(profile.language || "English") %>;</script>
   <script src="/js/dashboard.js"></script>
 </body>
 </html>
